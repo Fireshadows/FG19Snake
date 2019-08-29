@@ -404,7 +404,7 @@ MonoBehaviour:
   m_startingPosition: {x: 4, y: 10}
   m_rows: 21
   m_columns: 21
-  m_updateRate: 0.075
+  m_updateRate: 0.005
   m_apple: {fileID: 1297933}
 --- !u!4 &1512631891
 Transform:

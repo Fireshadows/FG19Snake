@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class PlayerSnake : MonoBehaviour
@@ -13,7 +14,7 @@ public class PlayerSnake : MonoBehaviour
     Direction Direction { get; set; }
     Direction m_oppositeDirection;
 
-    Tile Tile {
+    public Tile Tile {
         get { return m_linkedList.m_root.m_data.m_tile; }
         set { m_linkedList.m_root.m_data.m_tile = value; }
     }
@@ -21,12 +22,13 @@ public class PlayerSnake : MonoBehaviour
     private GameDirector m_gameDirector;
 
     private bool m_autoPilot;
-    delegate void AIDelegate();
-    AIDelegate m_aiDelegate;
+
+    List<Tile> m_currentPath;
 
     public void Initialize(Tile p_tile, GameDirector p_gameDirector)
     {
         m_gameDirector = p_gameDirector;
+        Direction = Direction.Right;
 
         m_linkedList = new LinkedList();
         AddHead();
@@ -37,9 +39,6 @@ public class PlayerSnake : MonoBehaviour
 
         AddBody();
         AddBody();
-
-        m_autoPilot = true;
-        m_aiDelegate = SteerAwayFromWall;
     }
     private void AddHead()
     {
@@ -67,6 +66,12 @@ public class PlayerSnake : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Space))
+            m_autoPilot = !m_autoPilot;
+
+        if (m_autoPilot)
+            return;
+
         if (Input.GetKey(KeyCode.LeftArrow) && Direction != Direction.Left)
             ChangeDirection(Direction.Left);
         else if (Input.GetKey(KeyCode.UpArrow) && Direction != Direction.Up)
@@ -79,8 +84,37 @@ public class PlayerSnake : MonoBehaviour
     
     public void OnUpdate()
     {
+        if (m_autoPilot)
+        {
+            SteerAwayFromWall();
+            if (m_gameDirector.m_appleTile.m_neighbours.Count(m_tile => TileIsImpassable(m_tile)) < 3/*m_currentPath == null*/)
+                m_currentPath = ConstructPath(Tile, m_gameDirector.m_appleTile);
+            if (m_currentPath != null)
+            {
+                Tile m_nextTileInPath = m_currentPath[1];
+
+                if (TileIsImpassable(m_nextTileInPath))
+                {
+                    m_currentPath = null;
+                    return;
+                }
+
+                if (Tile.m_coordinates.x > m_nextTileInPath.m_coordinates.x)
+                    Direction = Direction.Left;
+                else if (Tile.m_coordinates.x < m_nextTileInPath.m_coordinates.x)
+                    Direction = Direction.Right;
+                else if (Tile.m_coordinates.y < m_nextTileInPath.m_coordinates.y)
+                    Direction = Direction.Up;
+                else if (Tile.m_coordinates.y > m_nextTileInPath.m_coordinates.y)
+                    Direction = Direction.Down;
+                m_currentPath.RemoveAt(0);
+                DebugPath();
+                if (m_currentPath.Count == 1)
+                    m_currentPath = null;
+            }
+        }
+        else m_currentPath = null;
         Move();
-        m_aiDelegate?.Invoke();
     }
 
     private void Move()
@@ -154,7 +188,9 @@ public class PlayerSnake : MonoBehaviour
 
     private void SteerAwayFromWall()
     {
-        if (TileIsImpassable(Tile.m_neighbours[(int)Direction]))
+        bool m_impassableWallInFront = TileIsImpassable(Tile.m_neighbours[(int)Direction]);
+        bool m_impassableWallABitFurther = !m_impassableWallInFront && TileIsImpassable(Tile.m_neighbours[(int)Direction].m_neighbours[(int)Direction]);
+        if (m_impassableWallInFront || m_impassableWallABitFurther)
         {
             int m_length = 0;
             Direction m_direction = Direction.Left;
@@ -172,6 +208,9 @@ public class PlayerSnake : MonoBehaviour
             }
             m_length = CountTilesUntilWall(m_direction);
             m_otherLength = CountTilesUntilWall(m_otherDirection);
+
+            if (m_impassableWallABitFurther && m_length == 0 && m_otherLength == 0)
+                return;
 
             if (m_length > m_otherLength)
                 ChangeDirection(m_direction);
@@ -196,4 +235,92 @@ public class PlayerSnake : MonoBehaviour
         }
         return m_count;
     }
+
+
+    private List<Tile> ConstructPath(Tile p_startTile, Tile p_goalTile)
+    {
+        //Initialize open and closed lists
+        List<Tile> m_openTiles = new List<Tile>();
+        List<Tile> m_closedTiles = new List<Tile>();
+
+        Dictionary<Tile, Tile> m_constructedPath = new Dictionary<Tile, Tile>();
+
+        foreach (Tile m_tile in m_gameDirector.m_grid)
+        {
+            m_tile.GCost = m_tile.HCost = Mathf.Infinity;
+            m_constructedPath[m_tile] = null;
+        }
+
+        //Add start tile to it
+        m_openTiles.Add(p_startTile);
+        p_startTile.GCost = 0;
+        p_startTile.HCost = CalculateManhattanDistance(p_startTile, p_goalTile);
+
+        //Search for as long as open tiles is not empty
+        while (m_openTiles.Count > 0)
+        {
+            Tile m_currentTile = m_openTiles[0];
+            //Find the tile with the least cost
+            for (int i = 0; i < m_openTiles.Count - 1; i++)
+            {
+                if (m_currentTile.FCost > m_openTiles[i].FCost)
+                    m_currentTile = m_openTiles[i];
+            }
+
+            //If this tile is the goal then we've already found it
+            if (m_currentTile == p_goalTile)
+                break;
+
+            //Remove the tile with least cost from the open list
+            m_openTiles.Remove(m_currentTile);
+            m_closedTiles.Add(m_currentTile);
+
+            foreach (Tile m_neighbour in m_currentTile.m_neighbours)
+            {
+                if (m_neighbour == null || m_neighbour.m_impassable || m_closedTiles.Contains(m_neighbour))
+                    continue;
+                if (!m_openTiles.Contains(m_neighbour))
+                    m_openTiles.Add(m_neighbour);
+                float m_cost = m_currentTile.GCost + CalculateManhattanDistance(m_currentTile, m_neighbour);
+                if (m_cost < m_neighbour.GCost)
+                {
+                    m_neighbour.GCost = m_cost;
+                    m_neighbour.HCost = CalculateManhattanDistance(m_neighbour, p_goalTile);
+                    m_constructedPath[m_neighbour] = m_currentTile;
+                }
+            }
+        }
+
+        if (m_constructedPath[p_goalTile] == null)
+            return null;
+
+        List<Tile> m_currentPath = new List<Tile>();
+        Tile m_tempTile = p_goalTile;
+        while (m_tempTile != null)
+        {
+            m_currentPath.Add(m_tempTile);
+            m_tempTile = m_constructedPath[m_tempTile];
+        }
+        m_currentPath.Reverse();
+        return m_currentPath;
+    }
+
+    float CalculateManhattanDistance(Tile p_start, Tile p_end)
+    {
+        return (p_start.m_coordinates.x - p_end.m_coordinates.x) + (p_start.m_coordinates.y - p_end.m_coordinates.y);
+    }
+
+    void DebugPath()
+    {
+        if (m_currentPath == null)
+        {
+            Debug.Log("Failed debugging line because path does not exist");
+            return;
+        }
+        for (int i = 0; i < m_currentPath.Count - 1; i++)
+        {
+            Debug.DrawLine(m_currentPath[i].m_coordinates, m_currentPath[i + 1].m_coordinates, Color.cyan, m_gameDirector.m_updateRate + 0.015f);
+        }
+    }
+
 }

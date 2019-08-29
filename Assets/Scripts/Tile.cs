@@ -11,10 +11,10 @@ public class Tile
     public bool m_impassable;
     public bool m_hasApple;
 
-    public int m_gValue;
-    public int m_hValue;
+    public float GCost { get; set; }
+    public float HCost { get; set; }
 
-    public int fValue { get { return m_gValue + m_hValue; } }
+    public float FCost { get { return GCost + HCost; } }
 
     public Tile[] m_neighbours;
 
