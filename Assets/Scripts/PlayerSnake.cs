@@ -17,8 +17,12 @@ public class PlayerSnake : MonoBehaviour
         get { return m_linkedList.m_root.m_data.m_tile; }
         set { m_linkedList.m_root.m_data.m_tile = value; }
     }
+    
+    private GameDirector m_gameDirector;
 
-    GameDirector m_gameDirector;
+    private bool m_autoPilot;
+    delegate void AIDelegate();
+    AIDelegate m_aiDelegate;
 
     public void Initialize(Tile p_tile, GameDirector p_gameDirector)
     {
@@ -33,6 +37,9 @@ public class PlayerSnake : MonoBehaviour
 
         AddBody();
         AddBody();
+
+        m_autoPilot = true;
+        m_aiDelegate = SteerAwayFromWall;
     }
     private void AddHead()
     {
@@ -70,12 +77,21 @@ public class PlayerSnake : MonoBehaviour
             ChangeDirection(Direction.Down);
     }
     
-    public void Move()
+    public void OnUpdate()
+    {
+        Move();
+        m_aiDelegate?.Invoke();
+    }
+
+    private void Move()
     {
         Tile m_newTile = Tile.m_neighbours[(int)Direction];
 
-        if (m_newTile == null || m_newTile.m_impassable)
+        if (TileIsImpassable(m_newTile))
+        {
+            m_gameDirector.GameOver();
             return;
+        }
 
         MoveAllbodies(m_newTile);
 
@@ -119,7 +135,6 @@ public class PlayerSnake : MonoBehaviour
     {
         if (p_direction != m_oppositeDirection)
             Direction = p_direction;
-        //Debug.Log(m_direction + " " + m_oppositeDirection);
     }
 
     private void SetOppositeDirection()
@@ -130,5 +145,55 @@ public class PlayerSnake : MonoBehaviour
     {
         int m_opposite = ((int)p_direction % 2 == 0 ? 1 : -1);
         return (p_direction + m_opposite);
+    }
+
+    private bool TileIsImpassable(Tile p_tile)
+    {
+        return p_tile == null || p_tile.m_impassable;
+    }
+
+    private void SteerAwayFromWall()
+    {
+        if (TileIsImpassable(Tile.m_neighbours[(int)Direction]))
+        {
+            int m_length = 0;
+            Direction m_direction = Direction.Left;
+            int m_otherLength = 0;
+            Direction m_otherDirection = Direction.Left;
+            if (Direction == Direction.Left || Direction == Direction.Right)
+            {
+                m_direction = Direction.Up;
+                m_otherDirection = Direction.Down;
+            }
+            else if (Direction == Direction.Up || Direction == Direction.Down)
+            {
+                m_direction = Direction.Left;
+                m_otherDirection = Direction.Right;
+            }
+            m_length = CountTilesUntilWall(m_direction);
+            m_otherLength = CountTilesUntilWall(m_otherDirection);
+
+            if (m_length > m_otherLength)
+                ChangeDirection(m_direction);
+            else if (m_length < m_otherLength)
+                ChangeDirection(m_otherDirection);
+            else
+            {
+                if (Random.Range(0f, 1f) < .5f) ChangeDirection(m_direction);
+                else ChangeDirection(m_otherDirection);
+            }
+        }
+    }
+
+    private int CountTilesUntilWall(Direction p_direction)
+    {
+        int m_count = -1;
+        Tile m_currentTile = Tile;
+        while (!TileIsImpassable(m_currentTile)| m_currentTile == Tile)
+        {
+            m_currentTile = m_currentTile.m_neighbours[(int)p_direction];
+            m_count++;
+        }
+        return m_count;
     }
 }
