@@ -21,7 +21,8 @@ public class PlayerSnake : MonoBehaviour
     
     private GameDirector m_gameDirector;
 
-    private bool m_autoPilot;
+    [HideInInspector]
+    public bool m_autoPilot;
 
     List<Tile> m_currentPath;
 
@@ -87,7 +88,7 @@ public class PlayerSnake : MonoBehaviour
         if (m_autoPilot)
         {
             SteerAwayFromWall();
-            if (m_gameDirector.m_appleTile.m_neighbours.Count(m_tile => TileIsImpassable(m_tile)) < 3/*m_currentPath == null*/)
+            if (/*ConstructPath(Tile, m_linkedList.GetLastNode(m_linkedList).m_data.m_tile) != null &&*/ m_gameDirector.m_appleTile.m_neighbours.Count(m_tile => TileIsImpassable(m_tile)) < 3/*m_currentPath == null*/)
                 m_currentPath = ConstructPath(Tile, m_gameDirector.m_appleTile);
             if (m_currentPath != null)
             {
@@ -192,57 +193,75 @@ public class PlayerSnake : MonoBehaviour
         bool m_impassableWallABitFurther = !m_impassableWallInFront && TileIsImpassable(Tile.m_neighbours[(int)Direction].m_neighbours[(int)Direction]);
         if (m_impassableWallInFront || m_impassableWallABitFurther)
         {
-            int m_length = 0;
-            Direction m_direction = Direction.Left;
-            int m_otherLength = 0;
-            Direction m_otherDirection = Direction.Left;
-            if (Direction == Direction.Left || Direction == Direction.Right)
-            {
-                m_direction = Direction.Up;
-                m_otherDirection = Direction.Down;
-            }
-            else if (Direction == Direction.Up || Direction == Direction.Down)
-            {
-                m_direction = Direction.Left;
-                m_otherDirection = Direction.Right;
-            }
-            m_length = CountTilesUntilWall(m_direction);
-            m_otherLength = CountTilesUntilWall(m_otherDirection);
+            int m_length = 0, m_otherLength = 0;
 
-            if (m_impassableWallABitFurther && m_length == 0 && m_otherLength == 0)
+            Direction[] m_directions = GetPerpendicularDirections(Direction);
+
+            m_length = CountTilesUntilWall(Tile, m_directions[0], 1);
+            m_otherLength = CountTilesUntilWall(Tile, m_directions[1], 1);
+            //Debug.Log(m_length + " " + m_otherLength);
+            if (!m_impassableWallInFront && m_length <= 0 && m_otherLength <= 0)
                 return;
 
             if (m_length > m_otherLength)
-                ChangeDirection(m_direction);
+                ChangeDirection(m_directions[0]);
             else if (m_length < m_otherLength)
-                ChangeDirection(m_otherDirection);
+                ChangeDirection(m_directions[1]);
             else
             {
-                if (Random.Range(0f, 1f) < .5f) ChangeDirection(m_direction);
-                else ChangeDirection(m_otherDirection);
+                if (Random.Range(0f, 1f) < .5f) ChangeDirection(m_directions[0]);
+                else ChangeDirection(m_directions[1]);
             }
         }
     }
 
-    private int CountTilesUntilWall(Direction p_direction)
+    private int CountTilesUntilWall(Tile p_tile , Direction p_direction, int p_recursiveTimes = 0)
     {
+        if (!m_autoPilot && p_recursiveTimes > 0)
+            Debug.Log("");
         int m_count = -1;
-        Tile m_currentTile = Tile;
-        while (!TileIsImpassable(m_currentTile)| m_currentTile == Tile)
+        Tile m_currentTile = p_tile;
+        int m_countFromRecursiveFunctions = 0;
+
+        while (m_count < 10 && !TileIsImpassable(m_currentTile) || m_currentTile == Tile)
         {
             m_currentTile = m_currentTile.m_neighbours[(int)p_direction];
+            if (m_currentTile != null && p_recursiveTimes > 0)
+            {
+                Direction[] m_directions = GetPerpendicularDirections(p_direction);
+                m_countFromRecursiveFunctions += CountTilesUntilWall(m_currentTile, m_directions[0], p_recursiveTimes - 1);
+                m_countFromRecursiveFunctions += CountTilesUntilWall(m_currentTile, m_directions[1], p_recursiveTimes - 1);
+            }
             m_count++;
         }
-        return m_count;
+        return m_count + m_countFromRecursiveFunctions;
     }
 
+
+    private Direction[] GetPerpendicularDirections(Direction p_direction)
+    {
+        Direction[] m_perpendicularDirections = new Direction[2];
+
+        if (p_direction == Direction.Left || p_direction == Direction.Right)
+        {
+            m_perpendicularDirections[0] = Direction.Up;
+            m_perpendicularDirections[1] = Direction.Down;
+        }
+        else if (p_direction == Direction.Up || p_direction == Direction.Down)
+        {
+            m_perpendicularDirections[0] = Direction.Left;
+            m_perpendicularDirections[1] = Direction.Right;
+        }
+
+        return m_perpendicularDirections;
+    }
 
     private List<Tile> ConstructPath(Tile p_startTile, Tile p_goalTile)
     {
         //Initialize open and closed lists
         List<Tile> m_openTiles = new List<Tile>();
         List<Tile> m_closedTiles = new List<Tile>();
-
+        Debug.Log(p_goalTile);
         Dictionary<Tile, Tile> m_constructedPath = new Dictionary<Tile, Tile>();
 
         foreach (Tile m_tile in m_gameDirector.m_grid)

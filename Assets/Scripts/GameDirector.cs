@@ -1,14 +1,11 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using UnityEngine.SceneManagement;
-using System;
+using UnityEngine.UI;
 
 public class GameDirector : MonoBehaviour
 {
-    //LinkedList m_linkedList;
-
     [SerializeField]
     private PlayerSnake m_player;
 
@@ -25,11 +22,26 @@ public class GameDirector : MonoBehaviour
     [SerializeField]
     private GameObject m_apple;
 
+    [SerializeField]
+    private Text m_appleCountDisplay;
+    [SerializeField]
+    private Animator m_appleAnimator;
+    [SerializeField]
+    private GameObject m_autoOnDisplay;
+    [SerializeField]
+    private float m_autoBlinkRate;
+    private float m_autoBlinkTime;
+
+    private int m_appleCount = 0;
+
     [HideInInspector]
     public Tile[,] m_grid;
     [HideInInspector]
     public Tile m_appleTile;
-    
+    public AudioSource m_fxApple;
+
+    public AudioSource m_fxStep;
+
     private bool m_playing;
     private void Start()
     {
@@ -41,9 +53,11 @@ public class GameDirector : MonoBehaviour
 
         MoveApple(new Vector2(16, 10));
 
+        m_autoOnDisplay.SetActive(false);
         m_updateTime = m_updateRate;
-        NoFreeTiles();
+        m_autoBlinkTime = m_autoBlinkRate;
 
+        NoFreeTiles();
     }
 
     private void CreateLevel()
@@ -83,6 +97,7 @@ public class GameDirector : MonoBehaviour
 
     private void Update()
     {
+        m_appleCountDisplay.text = m_appleCount.ToString("000");
         if (Input.GetKeyDown(KeyCode.Escape))
             QuitGame();
         if (!m_playing)
@@ -110,13 +125,36 @@ public class GameDirector : MonoBehaviour
         {
             m_updateTime = m_updateRate;
             m_player.OnUpdate();
+            m_fxStep.Play();
         }
         else
             m_updateTime -= Time.deltaTime;
+        if (m_player.m_autoPilot)
+        {
+            if (m_autoBlinkTime <= 0)
+            {
+                m_autoBlinkTime = m_autoBlinkRate;
+                m_autoOnDisplay.SetActive(!m_autoOnDisplay.activeSelf);
+            }
+            else
+                m_autoBlinkTime -= Time.deltaTime;
+        }
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            m_autoBlinkTime = 0;
+            m_autoOnDisplay.SetActive(false);
+        }
     }
     
     public void OnAppleGrappled()
     {
+        m_appleCount++;
+        m_appleAnimator.SetTrigger("Shake");
+        if (m_fxApple.pitch <= 1)
+            m_fxApple.pitch = 1.05f;
+        else
+            m_fxApple.pitch = .95f;
+        m_fxApple.Play();
         MoveApple(GetAnyFreeTile().m_coordinates);
     }
 
