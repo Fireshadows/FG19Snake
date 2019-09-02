@@ -123,7 +123,7 @@ public class GameDirector : MonoBehaviour
         }
         if (m_updateTime <= 0)
         {
-            m_updateTime = m_updateRate;
+            m_updateTime = m_updateRate * (m_player.m_autoPilot ? 1 : 9);//15);
             m_player.OnUpdate();
             m_fxStep.Play();
         }

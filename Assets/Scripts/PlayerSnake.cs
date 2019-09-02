@@ -8,6 +8,10 @@ public class PlayerSnake : MonoBehaviour
     public Sprite m_headSprite;
     public Sprite m_tailSprite;
 
+    public Sprite[] m_headSprites;
+    public Sprite[] m_bodySprites;
+    public Sprite[] m_tailSprites;
+
     public GameObject m_snakeBody;
     LinkedList m_linkedList;
 
@@ -88,7 +92,9 @@ public class PlayerSnake : MonoBehaviour
         if (m_autoPilot)
         {
             SteerAwayFromWall();
-            if (/*ConstructPath(Tile, m_linkedList.GetLastNode(m_linkedList).m_data.m_tile) != null &&*/ m_gameDirector.m_appleTile.m_neighbours.Count(m_tile => TileIsImpassable(m_tile)) < 3/*m_currentPath == null*/)
+            //Tile m_tileBehindTail = m_linkedList.GetLastNode(m_linkedList).m_data.m_tile.m_neighbours[(int)GetOppositeDirection(m_linkedList.GetLastNode(m_linkedList).m_data.m_direction)];
+            if (/*!TileIsImpassable(m_tileBehindTail) && ConstructPath(Tile, m_tileBehindTail) != null 
+                && */m_gameDirector.m_appleTile.m_neighbours.Count(m_tile => TileIsImpassable(m_tile)) < 3/*m_currentPath == null*/)
                 m_currentPath = ConstructPath(Tile, m_gameDirector.m_appleTile);
             if (m_currentPath != null)
             {
@@ -141,29 +147,72 @@ public class PlayerSnake : MonoBehaviour
 
     private void MoveAllbodies(Tile p_newTile)
     {
-        Node m_temporaryNode;
+        Node m_currentNode;
         NodeData m_previousNodeData = new NodeData();
         NodeData m_temporaryData = new NodeData();
 
-        m_temporaryNode = m_linkedList.m_root;
+        m_currentNode = m_linkedList.m_root;
 
-        m_previousNodeData.AssignNewValues(m_temporaryNode.m_data.m_tile, m_temporaryNode.m_data.m_direction);
-        m_temporaryNode.m_data.AssignNewValues(p_newTile, Direction);
+        m_previousNodeData.AssignNewValues(m_currentNode.m_data.m_tile, m_currentNode.m_data.m_direction);
+        m_currentNode.m_data.AssignNewValues(p_newTile, Direction);
 
-        while(m_temporaryNode.m_next != null)
+        while(m_currentNode.m_next != null)
         {
-            //Assign new temporary node
-            m_temporaryNode = m_temporaryNode.m_next;
+            //Assign new current node
+            m_currentNode = m_currentNode.m_next;
 
             //Save values of the new node
-            m_temporaryData.AssignNewValues(m_temporaryNode.m_data.m_tile, m_temporaryNode.m_data.m_direction);
+            m_temporaryData.AssignNewValues(m_currentNode.m_data.m_tile, m_currentNode.m_data.m_direction);
 
             //Assign the body of the node to the new values
-            m_temporaryNode.m_data.AssignNewValues(m_previousNodeData.m_nextTile, m_previousNodeData.m_direction);
+            m_currentNode.m_data.AssignNewValues(m_previousNodeData.m_nextTile, m_previousNodeData.m_direction);
 
             //Get saved coordinates to assign next node with
             m_previousNodeData.AssignNewValues(m_temporaryData.m_nextTile, m_temporaryData.m_direction);
         }
+        /*Direction m_directionAhead;
+        m_currentNode = m_linkedList.m_root;
+        ChangeBodySprite(m_currentNode, m_currentNode.m_data.m_direction);
+        while (m_currentNode.m_next != null)
+        {
+            m_directionAhead = m_currentNode.m_data.m_direction;
+            m_currentNode = m_currentNode.m_next;
+            //ChangeDirection to a correct sprite here, using previousnodedata.direction and currentnodes direction
+            ChangeBodySprite(m_currentNode, m_directionAhead);
+            //m_currentNode.m_data.ChangeSprite();
+        }*/
+    }
+
+    private void ChangeBodySprite(Node p_node, Direction p_aheadDirection)
+    {
+        Sprite m_sprite = null;
+        if (p_node == m_linkedList.m_root)
+        {
+            m_sprite = m_headSprites[(int)p_aheadDirection];
+        }
+        else if (p_node.m_next != null)
+        {
+            if (p_aheadDirection == p_node.m_next.m_data.m_direction)
+                m_sprite = m_bodySprites[(int)p_aheadDirection < 2 ? 0 : 1];
+            else
+            {
+                if (p_aheadDirection == Direction.Left)
+                    m_sprite = m_bodySprites[2 + (int)(p_node.m_next.m_data.m_direction == Direction.Up ? Direction.Down : Direction.Up)];
+                else if (p_aheadDirection == Direction.Right)
+                    m_sprite = m_bodySprites[2 + (int)(p_node.m_next.m_data.m_direction == Direction.Up ? Direction.Down : Direction.Up)];
+                else if (p_aheadDirection == Direction.Up)
+                    m_sprite = m_bodySprites[2 + (int)(p_node.m_next.m_data.m_direction == Direction.Left ? Direction.Left : Direction.Right)];
+                else if (p_aheadDirection == Direction.Down)
+                    m_sprite = m_bodySprites[2 + (int)(p_node.m_next.m_data.m_direction == Direction.Left ? Direction.Left : Direction.Right)];
+
+                //m_sprite = m_bodySprites[(int)p_aheadDirection];
+            }
+        }
+        else if (p_node.m_next == null)
+        {
+            m_sprite = m_tailSprites[(int)p_aheadDirection];
+        }
+        p_node.m_data.ChangeSprite(m_sprite);
     }
 
     public void ChangeDirection(Direction p_direction)

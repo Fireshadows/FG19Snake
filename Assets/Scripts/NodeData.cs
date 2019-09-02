@@ -27,6 +27,14 @@ public class NodeData : MonoBehaviour
         }
     }
 
+    public void ChangeSprite(Sprite p_sprite)
+    {
+        if (m_node != null)
+        {
+            GetComponent<SpriteRenderer>().sprite = p_sprite;
+        }
+    }
+
     public void Place()
     {
         //Debug.Log(m_nextTile);
