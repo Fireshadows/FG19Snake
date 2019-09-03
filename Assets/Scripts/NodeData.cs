@@ -17,7 +17,6 @@ public class NodeData : MonoBehaviour
 
     public void AssignNewValues(Tile p_tile, Direction p_direction)
     {
-        //Debug.Log(p_tile);
         m_nextTile = p_tile;
         m_direction = p_direction;
 

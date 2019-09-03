@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum Direction { Left, Right, Up, Down }
+public enum Direction {
+    Left,
+    Right,
+    Up,
+    Down }
 
 public class Tile
 {

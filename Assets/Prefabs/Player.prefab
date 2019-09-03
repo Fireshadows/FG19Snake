@@ -106,7 +106,7 @@ MonoBehaviour:
   - {fileID: -6046151137650718192, guid: 59e3f7fa9b1ba354a9fcf7b6d67345a0, type: 3}
   - {fileID: 5770428470461341631, guid: 59e3f7fa9b1ba354a9fcf7b6d67345a0, type: 3}
   - {fileID: 1002017818592406128, guid: 59e3f7fa9b1ba354a9fcf7b6d67345a0, type: 3}
-  - {fileID: 1002017818592406128, guid: 59e3f7fa9b1ba354a9fcf7b6d67345a0, type: 3}
+  - {fileID: -8516803450391726360, guid: 59e3f7fa9b1ba354a9fcf7b6d67345a0, type: 3}
   - {fileID: 8866677585493399407, guid: 59e3f7fa9b1ba354a9fcf7b6d67345a0, type: 3}
   m_tailSprites:
   - {fileID: 4491052458955572392, guid: 59e3f7fa9b1ba354a9fcf7b6d67345a0, type: 3}

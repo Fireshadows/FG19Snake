@@ -4,49 +4,49 @@ TextureImporter:
   internalIDToNameTable:
   - first:
       213: 8866677585493399407
-    second: snake-graphics_0
+    second: snake_0
   - first:
       213: 2885435292033664308
-    second: snake-graphics_1
+    second: snake_1
   - first:
       213: 1002017818592406128
-    second: snake-graphics_2
+    second: snake_2
   - first:
       213: 1327854749836731671
-    second: snake-graphics_3
+    second: snake_3
   - first:
       213: -6429070709573749194
-    second: snake-graphics_4
+    second: snake_4
   - first:
       213: -8516803450391726360
-    second: snake-graphics_5
+    second: snake_5
   - first:
       213: -6046151137650718192
-    second: snake-graphics_6
+    second: snake_6
   - first:
       213: -8770569143410181175
-    second: snake-graphics_7
+    second: snake_7
   - first:
       213: 3523522773891115138
-    second: snake-graphics_8
+    second: snake_8
   - first:
       213: 5770428470461341631
-    second: snake-graphics_9
+    second: snake_9
   - first:
       213: -379841276017795939
-    second: snake-graphics_10
+    second: snake_10
   - first:
       213: -5004140657814015249
-    second: snake-graphics_11
+    second: snake_11
   - first:
       213: -8052807542128858985
-    second: snake-graphics_12
+    second: apple_12
   - first:
       213: 4491052458955572392
-    second: snake-graphics_13
+    second: snake_13
   - first:
       213: 7187687578087786544
-    second: snake-graphics_14
+    second: snake_14
   externalObjects: {}
   serializedVersion: 10
   mipmaps:
@@ -167,7 +167,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: snake-graphics_0
+      name: snake_0
       rect:
         serializedVersion: 2
         x: 0
@@ -188,7 +188,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_1
+      name: snake_1
       rect:
         serializedVersion: 2
         x: 64
@@ -209,7 +209,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_2
+      name: snake_2
       rect:
         serializedVersion: 2
         x: 128
@@ -230,7 +230,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_3
+      name: snake_3
       rect:
         serializedVersion: 2
         x: 192
@@ -251,7 +251,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_4
+      name: snake_4
       rect:
         serializedVersion: 2
         x: 256
@@ -272,7 +272,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_5
+      name: snake_5
       rect:
         serializedVersion: 2
         x: 0
@@ -293,7 +293,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_6
+      name: snake_6
       rect:
         serializedVersion: 2
         x: 128
@@ -314,7 +314,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_7
+      name: snake_7
       rect:
         serializedVersion: 2
         x: 192
@@ -335,7 +335,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_8
+      name: snake_8
       rect:
         serializedVersion: 2
         x: 256
@@ -356,7 +356,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_9
+      name: snake_9
       rect:
         serializedVersion: 2
         x: 128
@@ -377,7 +377,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_10
+      name: snake_10
       rect:
         serializedVersion: 2
         x: 192
@@ -398,7 +398,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_11
+      name: snake_11
       rect:
         serializedVersion: 2
         x: 256
@@ -419,7 +419,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_12
+      name: apple_12
       rect:
         serializedVersion: 2
         x: 0
@@ -440,7 +440,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_13
+      name: snake_13
       rect:
         serializedVersion: 2
         x: 192
@@ -461,7 +461,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: snake-graphics_14
+      name: snake_14
       rect:
         serializedVersion: 2
         x: 256
