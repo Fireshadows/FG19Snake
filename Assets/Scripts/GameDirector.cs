@@ -16,6 +16,9 @@ public class GameDirector : MonoBehaviour
     private int m_rows;
     [SerializeField]
     private int m_columns;
+
+    public int GridArea { get => m_rows * m_columns; }
+
     public float m_updateRate;
     private float m_updateTime;
 
@@ -123,7 +126,7 @@ public class GameDirector : MonoBehaviour
         }
         if (m_updateTime <= 0)
         {
-            m_updateTime = m_updateRate * (m_player.m_autoPilot ? 1 : 9);//15);
+            m_updateTime = m_updateRate * (m_player.m_autoPilot ? 1 : 20);//15);
             m_player.OnUpdate();
             m_fxStep.Play();
         }

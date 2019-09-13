@@ -259,8 +259,8 @@ public class PlayerSnake : MonoBehaviour
 
     private int CountTilesUntilWall(Tile p_tile , Direction p_direction, int p_recursiveTimes = 0)
     {
-        if (!m_autoPilot && p_recursiveTimes > 0)
-            Debug.Log("");
+        /*if (!m_autoPilot && p_recursiveTimes > 0)
+            Debug.Log("");*/
         int m_count = -1;
         Tile m_currentTile = p_tile;
         int m_countFromRecursiveFunctions = 0;
@@ -301,9 +301,9 @@ public class PlayerSnake : MonoBehaviour
     private List<Tile> ConstructPath(Tile p_startTile, Tile p_goalTile)
     {
         //Initialize open and closed lists
-        List<Tile> m_openTiles = new List<Tile>();
-        List<Tile> m_closedTiles = new List<Tile>();
-        Debug.Log(p_goalTile);
+        Heap<Tile> m_openTiles = new Heap<Tile>(m_gameDirector.GridArea);
+        Heap<Tile> m_closedTiles = new Heap<Tile>(m_gameDirector.GridArea);
+        //    Debug.Log(p_goalTile);
         Dictionary<Tile, Tile> m_constructedPath = new Dictionary<Tile, Tile>();
 
         foreach (Tile m_tile in m_gameDirector.m_grid)
@@ -320,20 +320,20 @@ public class PlayerSnake : MonoBehaviour
         //Search for as long as open tiles is not empty
         while (m_openTiles.Count > 0)
         {
-            Tile m_currentTile = m_openTiles[0];
+            Tile m_currentTile = m_openTiles.RemoveFirst();
             //Find the tile with the least cost
-            for (int i = 0; i < m_openTiles.Count - 1; i++)
+            /*for (int i = 0; i < m_openTiles.Count - 1; i++)
             {
                 if (m_currentTile.FCost > m_openTiles[i].FCost)
                     m_currentTile = m_openTiles[i];
-            }
+            }*/
 
             //If this tile is the goal then we've already found it
             if (m_currentTile == p_goalTile)
                 break;
 
             //Remove the tile with least cost from the open list
-            m_openTiles.Remove(m_currentTile);
+            //m_openTiles.Remove(m_currentTile);
             m_closedTiles.Add(m_currentTile);
 
             foreach (Tile m_neighbour in m_currentTile.m_neighbours)
@@ -380,7 +380,7 @@ public class PlayerSnake : MonoBehaviour
         }
         for (int i = 0; i < m_currentPath.Count - 1; i++)
         {
-            Debug.DrawLine(m_currentPath[i].m_coordinates, m_currentPath[i + 1].m_coordinates, Color.cyan, m_gameDirector.m_updateRate + 0.015f);
+            Debug.DrawLine(m_currentPath[i].m_coordinates, m_currentPath[i + 1].m_coordinates, Color.cyan, m_gameDirector.m_updateRate + 0.025f);
         }
     }
 
