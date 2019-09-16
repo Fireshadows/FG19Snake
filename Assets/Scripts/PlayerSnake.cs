@@ -45,7 +45,7 @@ public class PlayerSnake : MonoBehaviour
     {
         NodeData m_head = Instantiate(m_snakeBody.gameObject, transform).GetComponent<NodeData>();
         m_head.GetComponent<SpriteRenderer>().sprite = m_headSprite;
-        m_linkedList.PushFront(m_linkedList, m_head);
+        m_linkedList.PushFront(m_head);
 
         m_linkedList.m_root.m_data.AssignNewValues(p_tile, Direction.Right);
     }
@@ -55,13 +55,13 @@ public class PlayerSnake : MonoBehaviour
 
         m_body.GetComponent<SpriteRenderer>().sprite = m_tailSprite;
 
-        Node m_lastNode = m_linkedList.GetLastNode(m_linkedList);
+        Node m_lastNode = m_linkedList.GetLastNode();
 
         m_body.AssignNewValues(
             m_lastNode.m_data.m_tile.m_neighbours[(int)GetOppositeDirection(m_lastNode.m_data.m_direction)],
             m_lastNode.m_data.m_direction);
 
-        m_linkedList.PushBack(m_linkedList, m_body.GetComponent<NodeData>());
+        m_linkedList.PushBack(m_body.GetComponent<NodeData>());
         m_body.Place();
     }
 
@@ -73,13 +73,13 @@ public class PlayerSnake : MonoBehaviour
         if (m_autoPilot)
             return;
 
-        if (Input.GetKey(KeyCode.LeftArrow) && Direction != Direction.Left)
+        if (Input.GetKey(KeyCode.LeftArrow))// && Direction != Direction.Left)
             ChangeDirection(Direction.Left);
-        else if (Input.GetKey(KeyCode.UpArrow) && Direction != Direction.Up)
+        else if (Input.GetKey(KeyCode.UpArrow))// && Direction != Direction.Up)
             ChangeDirection(Direction.Up);
-        else if (Input.GetKey(KeyCode.RightArrow) && Direction != Direction.Right)
+        else if (Input.GetKey(KeyCode.RightArrow))// && Direction != Direction.Right)
             ChangeDirection(Direction.Right);
-        else if (Input.GetKey(KeyCode.DownArrow) && Direction != Direction.Down)
+        else if (Input.GetKey(KeyCode.DownArrow))// && Direction != Direction.Down)
             ChangeDirection(Direction.Down);
     }
     
@@ -88,9 +88,20 @@ public class PlayerSnake : MonoBehaviour
         if (m_autoPilot)
         {
             SteerAwayFromWall();
-            Tile m_tileBehindTail = m_linkedList.GetLastNode(m_linkedList).m_data.m_tile.m_neighbours[(int)GetOppositeDirection(m_linkedList.GetLastNode(m_linkedList).m_data.m_direction)];
+
+            /*
+             * Since autopilot is on, we want to pathfind to the apple.
+             * However, there are some checks we want to do in order for the snake to not trap itself so easily.
+             * First is to check if its possible for the snake to find a path to the tile behind its tail.
+             * In most cases, this means it will almost always have a way out when getting the apple.
+             * The other thing we want to check is if the apple has at least 2 empty tiles around it.
+             * If that would not be the case, the apple would be in a dead end or just inaccessible to the snake.
+            */
+
+            Tile m_tileBehindTail = m_linkedList.GetLastNode().m_data.m_tile.m_neighbours[(int)GetOppositeDirection(m_linkedList.GetLastNode().m_data.m_direction)];
+
             if (!TileIsImpassable(m_tileBehindTail) && ConstructPath(Tile, m_tileBehindTail) != null 
-                && m_gameDirector.m_appleTile.m_neighbours.Count(m_tile => TileIsImpassable(m_tile)) < 3/*m_currentPath == null*/)
+                && m_gameDirector.m_appleTile.m_neighbours.Count(m_tile => TileIsImpassable(m_tile)) < 3)
                 m_currentPath = ConstructPath(Tile, m_gameDirector.m_appleTile);
             if (m_currentPath != null)
             {
@@ -135,39 +146,36 @@ public class PlayerSnake : MonoBehaviour
             AddBody();
         }
 
-        MoveAllbodies(m_newTile);
-
+        MoveBody(m_newTile);
 
         SetOppositeDirection();
     }
 
-    private void MoveAllbodies(Tile p_newTile)
+    /// <summary>
+    /// Takes the tail body of the snake and puts it where the head is, after placing the head on the new tile.
+    /// The rest of the body doesn't need to be moved because nothing would visibly change regardless.
+    /// </summary>
+    private void MoveBody(Tile p_newTile)
     {
+        m_linkedList.PlaceLastNodeAfterRoot();
+
         Node m_currentNode;
         NodeData m_previousNodeData = new NodeData();
-        NodeData m_temporaryData = new NodeData();
 
         m_currentNode = m_linkedList.m_root;
 
         m_previousNodeData.AssignNewValues(m_currentNode.m_data.m_tile, m_currentNode.m_data.m_direction);
         m_currentNode.m_data.AssignNewValues(p_newTile, Direction);
 
-        while(m_currentNode.m_next != null)
-        {
-            //Assign new current node
-            m_currentNode = m_currentNode.m_next;
-
-            //Save values of the new node
-            m_temporaryData.AssignNewValues(m_currentNode.m_data.m_tile, m_currentNode.m_data.m_direction);
-
-            //Assign the body of the node to the new values
-            m_currentNode.m_data.AssignNewValues(m_previousNodeData.m_nextTile, m_previousNodeData.m_direction);
-
-            //Get saved coordinates to assign next node with
-            m_previousNodeData.AssignNewValues(m_temporaryData.m_nextTile, m_temporaryData.m_direction);
-        }
+        m_currentNode = m_currentNode.m_next;
+        m_currentNode.m_data.AssignNewValues(m_previousNodeData.m_nextTile, m_previousNodeData.m_direction);
         UpdateAllSprites();
     }
+
+    /// <summary>
+    /// This function updates all the body parts of the snake so that it look like a real seamless snake.
+    /// </summary>
+
     private void UpdateAllSprites()
     {
         Node m_currentNode = m_linkedList.m_root;
@@ -177,11 +185,10 @@ public class PlayerSnake : MonoBehaviour
         {
             m_directionAhead = m_currentNode.m_data.m_direction;
             m_currentNode = m_currentNode.m_next;
-            //ChangeDirection to a correct sprite here, using previousnodedata.direction and currentnodes direction
             ChangeBodySprite(m_currentNode, m_directionAhead);
-            //m_currentNode.m_data.ChangeSprite();
         }
     }
+
     private void ChangeBodySprite(Node p_node, Direction p_aheadDirection)
     {
         Sprite m_sprite = null;
@@ -214,6 +221,9 @@ public class PlayerSnake : MonoBehaviour
             Direction = p_direction;
     }
 
+    /// <summary>
+    /// Updating an opposite direction will help us avoid pressing inputs so that the snake turns 180 and into itself.
+    /// </summary>
     private void SetOppositeDirection()
     {
         m_oppositeDirection = GetOppositeDirection(Direction);
@@ -229,19 +239,21 @@ public class PlayerSnake : MonoBehaviour
         return p_tile == null || p_tile.m_impassable;
     }
 
+    /// <summary>
+    /// The snake falls back to this function if no path could be calculated.
+    /// The snake will continue forward and uses this function to sense any walls in up to 2 tiles ahead in its direction.
+    /// If a wall is sensed, it will turn either left or right of its direction, depending on which way has the most free space.
+    /// </summary>
     private void SteerAwayFromWall()
     {
         bool m_impassableWallInFront = TileIsImpassable(Tile.m_neighbours[(int)Direction]);
         bool m_impassableWallABitFurther = !m_impassableWallInFront && TileIsImpassable(Tile.m_neighbours[(int)Direction].m_neighbours[(int)Direction]);
         if (m_impassableWallInFront || m_impassableWallABitFurther)
         {
-            int m_length = 0, m_otherLength = 0;
-
             Direction[] m_directions = GetPerpendicularDirections(Direction);
 
-            m_length = CountTilesUntilWall(Tile, m_directions[0], 1);
-            m_otherLength = CountTilesUntilWall(Tile, m_directions[1], 1);
-            //Debug.Log(m_length + " " + m_otherLength);
+            int m_length = CountTilesUntilWall(Tile, m_directions[0], 1);
+            int m_otherLength = CountTilesUntilWall(Tile, m_directions[1], 1);
             if (!m_impassableWallInFront && m_length <= 0 && m_otherLength <= 0)
                 return;
 
@@ -259,13 +271,11 @@ public class PlayerSnake : MonoBehaviour
 
     private int CountTilesUntilWall(Tile p_tile , Direction p_direction, int p_recursiveTimes = 0)
     {
-        /*if (!m_autoPilot && p_recursiveTimes > 0)
-            Debug.Log("");*/
         int m_count = -1;
         Tile m_currentTile = p_tile;
         int m_countFromRecursiveFunctions = 0;
 
-        while (/*m_count < 10 &&*/ !TileIsImpassable(m_currentTile) || m_currentTile == Tile)
+        while (!TileIsImpassable(m_currentTile) || m_currentTile == Tile)
         {
             m_currentTile = m_currentTile.m_neighbours[(int)p_direction];
             if (m_currentTile != null && p_recursiveTimes > 0)
@@ -298,14 +308,20 @@ public class PlayerSnake : MonoBehaviour
         return m_perpendicularDirections;
     }
 
+    /// <summary>
+    /// Using A* search algorithm to find the shortest path from the start tile to the goal tile
+    /// </summary>
+    /// 
     private List<Tile> ConstructPath(Tile p_startTile, Tile p_goalTile)
     {
         //Initialize open and closed lists
-        Heap<Tile> m_openTiles = new Heap<Tile>(m_gameDirector.GridArea);
-        Heap<Tile> m_closedTiles = new Heap<Tile>(m_gameDirector.GridArea);
-        //    Debug.Log(p_goalTile);
+        List<Tile> m_openTiles = new List<Tile>(m_gameDirector.GridArea);
+        List<Tile> m_closedTiles = new List<Tile>(m_gameDirector.GridArea);
+
+        //Initialize dictionary to store path within
         Dictionary<Tile, Tile> m_constructedPath = new Dictionary<Tile, Tile>();
 
+        //Set default values
         foreach (Tile m_tile in m_gameDirector.m_grid)
         {
             m_tile.GCost = m_tile.HCost = Mathf.Infinity;
@@ -320,25 +336,26 @@ public class PlayerSnake : MonoBehaviour
         //Search for as long as open tiles is not empty
         while (m_openTiles.Count > 0)
         {
-            Tile m_currentTile = m_openTiles.RemoveFirst();
+            Tile m_currentTile = m_openTiles[0];// = m_openTiles.RemoveFirst();
             //Find the tile with the least cost
-            /*for (int i = 0; i < m_openTiles.Count - 1; i++)
+            for (int i = 0; i < m_openTiles.Count - 1; i++)
             {
                 if (m_currentTile.FCost > m_openTiles[i].FCost)
                     m_currentTile = m_openTiles[i];
-            }*/
+            }
 
             //If this tile is the goal then we've already found it
             if (m_currentTile == p_goalTile)
                 break;
 
             //Remove the tile with least cost from the open list
-            //m_openTiles.Remove(m_currentTile);
+            m_openTiles.Remove(m_currentTile);
             m_closedTiles.Add(m_currentTile);
+
 
             foreach (Tile m_neighbour in m_currentTile.m_neighbours)
             {
-                if (m_neighbour == null || m_neighbour.m_impassable || m_closedTiles.Contains(m_neighbour))
+                if (TileIsImpassable(m_neighbour) || m_closedTiles.Contains(m_neighbour))
                     continue;
                 if (!m_openTiles.Contains(m_neighbour))
                     m_openTiles.Add(m_neighbour);
@@ -354,7 +371,6 @@ public class PlayerSnake : MonoBehaviour
 
         if (m_constructedPath[p_goalTile] == null)
             return null;
-
         List<Tile> m_currentPath = new List<Tile>();
         Tile m_tempTile = p_goalTile;
         while (m_tempTile != null)
@@ -375,13 +391,11 @@ public class PlayerSnake : MonoBehaviour
     {
         if (m_currentPath == null)
         {
-            Debug.Log("Failed debugging line because path does not exist");
+            Debug.Log("Failed because I can't debug a path that does not exist");
             return;
         }
         for (int i = 0; i < m_currentPath.Count - 1; i++)
-        {
             Debug.DrawLine(m_currentPath[i].m_coordinates, m_currentPath[i + 1].m_coordinates, Color.cyan, m_gameDirector.m_updateRate + 0.025f);
-        }
     }
 
 }
