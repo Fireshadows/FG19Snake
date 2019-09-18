@@ -7,16 +7,16 @@ internal class LinkedList
 {
     public Node m_root;
 
-    public void PushFront(NodeData p_value)
+    public void PushFront(Node p_value)
     {
-        Node m_newNode = new Node(p_value);
+        Node m_newNode = p_value;
         m_newNode.m_next = m_root;
         m_root = m_newNode;
     }
 
-    public void PushBack(NodeData p_value)
+    public void PushBack(Node p_value)
     {
-        Node m_newNode = new Node(p_value);
+        Node m_newNode = p_value;
         if (m_root == null)
         {
             m_root = m_newNode;
@@ -48,14 +48,25 @@ internal class LinkedList
         m_root.m_next = m_node;
     }
 
-    internal void DebugValues()
+    public void RemoveNodesFromTiles()
     {
         Node m_temp = m_root;
-        Debug.Log(m_temp.m_data);
+        m_temp.RemoveTile();
         while (m_temp.m_next != null)
         {
             m_temp = m_temp.m_next;
-            Debug.Log(m_temp.m_data);
+            m_temp.RemoveTile();
+        }
+    }
+
+    internal void DebugValues()
+    {
+        Node m_temp = m_root;
+        Debug.Log(m_temp);
+        while (m_temp.m_next != null)
+        {
+            m_temp = m_temp.m_next;
+            Debug.Log(m_temp);
         }
     }
 }

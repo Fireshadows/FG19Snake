@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class GameDirector : MonoBehaviour
 {
     [SerializeField]
+    private PlayerSnake m_playerPrefab;
     private PlayerSnake m_player;
 
     [SerializeField]
@@ -46,12 +47,26 @@ public class GameDirector : MonoBehaviour
     public AudioSource m_fxStep;
 
     private bool m_playing;
+
+    [SerializeField]
+    private CanvasGroup m_controlScheme;
+
     private void Start()
     {
-        m_playing = false;
+        m_controlScheme.alpha = 1;
+
         CreateLevel();
 
-        m_player = Instantiate(m_player.gameObject, Vector3.zero, Quaternion.identity).GetComponent<PlayerSnake>();
+        Initialize();
+
+        NoFreeTiles();
+    }
+
+    private void Initialize()
+    {
+        m_playing = false;
+
+        m_player = Instantiate(m_playerPrefab.gameObject, Vector3.zero, Quaternion.identity).GetComponent<PlayerSnake>();
         m_player.Initialize(m_grid[(int)m_startingPosition.x, (int)m_startingPosition.y], this);
 
         MoveApple(new Vector2(16, 10));
@@ -60,7 +75,7 @@ public class GameDirector : MonoBehaviour
         m_updateTime = m_updateRate;
         m_autoBlinkTime = m_autoBlinkRate;
 
-        NoFreeTiles();
+        m_appleCount = 0;
     }
 
     private void CreateLevel()
@@ -124,9 +139,11 @@ public class GameDirector : MonoBehaviour
             if (!m_playing)
                 return;
         }
+        if (m_controlScheme.alpha > 0)
+            m_controlScheme.alpha -= 3 * Time.deltaTime;
         if (m_updateTime <= 0)
         {
-            m_updateTime = m_updateRate * (m_player.m_autoPilot ? 1 : 20);//15);
+            m_updateTime = m_updateRate * (m_player.m_autoPilot ? 1 : 20);
             m_player.OnUpdate();
             m_fxStep.Play();
         }
@@ -200,7 +217,8 @@ public class GameDirector : MonoBehaviour
 
     public void GameOver()
     {
-        SceneManager.LoadScene(0);
+        m_player.OnGameOver();
+        Initialize();
     }
 
     private void QuitGame()

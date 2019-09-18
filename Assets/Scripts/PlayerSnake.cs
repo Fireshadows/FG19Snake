@@ -19,8 +19,8 @@ public class PlayerSnake : MonoBehaviour
     Direction m_oppositeDirection;
 
     public Tile Tile {
-        get { return m_linkedList.m_root.m_data.m_tile; }
-        set { m_linkedList.m_root.m_data.m_tile = value; }
+        get { return m_linkedList.m_root.m_tile; }
+        set { m_linkedList.m_root.m_tile = value; }
     }
     
     private GameDirector m_gameDirector;
@@ -43,26 +43,24 @@ public class PlayerSnake : MonoBehaviour
     }
     private void AddHead(Tile p_tile)
     {
-        NodeData m_head = Instantiate(m_snakeBody.gameObject, transform).GetComponent<NodeData>();
-        m_head.GetComponent<SpriteRenderer>().sprite = m_headSprite;
+        Node m_head = Instantiate(m_snakeBody.gameObject, transform).GetComponent<Node>();
+        //m_head.GetComponent<SpriteRenderer>().sprite = m_headSprite;
         m_linkedList.PushFront(m_head);
 
-        m_linkedList.m_root.m_data.AssignNewValues(p_tile, Direction.Right);
+        m_linkedList.m_root.UpdateBody(p_tile, Direction.Right);
     }
     public void AddBody()
     {
-        NodeData m_body = Instantiate(m_snakeBody.gameObject, transform).GetComponent<NodeData>();
+        Node m_body = Instantiate(m_snakeBody.gameObject, transform).GetComponent<Node>();
 
-        m_body.GetComponent<SpriteRenderer>().sprite = m_tailSprite;
+        //m_body.GetComponent<SpriteRenderer>().sprite = m_tailSprite;
 
         Node m_lastNode = m_linkedList.GetLastNode();
+        m_body.UpdateBody(
+            m_lastNode.m_tile.m_neighbours[(int)GetOppositeDirection(m_lastNode.m_direction)],
+            m_lastNode.m_direction);
 
-        m_body.AssignNewValues(
-            m_lastNode.m_data.m_tile.m_neighbours[(int)GetOppositeDirection(m_lastNode.m_data.m_direction)],
-            m_lastNode.m_data.m_direction);
-
-        m_linkedList.PushBack(m_body.GetComponent<NodeData>());
-        m_body.Place();
+        m_linkedList.PushBack(m_body);
     }
 
     void Update()
@@ -73,13 +71,13 @@ public class PlayerSnake : MonoBehaviour
         if (m_autoPilot)
             return;
 
-        if (Input.GetKey(KeyCode.LeftArrow))// && Direction != Direction.Left)
+        if (Input.GetKey(KeyCode.LeftArrow))
             ChangeDirection(Direction.Left);
-        else if (Input.GetKey(KeyCode.UpArrow))// && Direction != Direction.Up)
+        else if (Input.GetKey(KeyCode.UpArrow))
             ChangeDirection(Direction.Up);
-        else if (Input.GetKey(KeyCode.RightArrow))// && Direction != Direction.Right)
+        else if (Input.GetKey(KeyCode.RightArrow))
             ChangeDirection(Direction.Right);
-        else if (Input.GetKey(KeyCode.DownArrow))// && Direction != Direction.Down)
+        else if (Input.GetKey(KeyCode.DownArrow))
             ChangeDirection(Direction.Down);
     }
     
@@ -96,9 +94,8 @@ public class PlayerSnake : MonoBehaviour
              * In most cases, this means it will almost always have a way out when getting the apple.
              * The other thing we want to check is if the apple has at least 2 empty tiles around it.
              * If that would not be the case, the apple would be in a dead end or just inaccessible to the snake.
-            */
-
-            Tile m_tileBehindTail = m_linkedList.GetLastNode().m_data.m_tile.m_neighbours[(int)GetOppositeDirection(m_linkedList.GetLastNode().m_data.m_direction)];
+             */
+            Tile m_tileBehindTail = m_linkedList.GetLastNode().m_tile.m_neighbours[(int)GetOppositeDirection(m_linkedList.GetLastNode().m_direction)];
 
             if (!TileIsImpassable(m_tileBehindTail) && ConstructPath(Tile, m_tileBehindTail) != null 
                 && m_gameDirector.m_appleTile.m_neighbours.Count(m_tile => TileIsImpassable(m_tile)) < 3)
@@ -159,60 +156,58 @@ public class PlayerSnake : MonoBehaviour
     {
         m_linkedList.PlaceLastNodeAfterRoot();
 
-        Node m_currentNode;
-        NodeData m_previousNodeData = new NodeData();
+        Node m_currentNode = m_linkedList.m_root;
 
-        m_currentNode = m_linkedList.m_root;
+        Tile m_previousTile = m_currentNode.m_tile;
+        Direction m_previousDirection = m_currentNode.m_direction;
 
-        m_previousNodeData.AssignNewValues(m_currentNode.m_data.m_tile, m_currentNode.m_data.m_direction);
-        m_currentNode.m_data.AssignNewValues(p_newTile, Direction);
+        m_currentNode.UpdateBody(p_newTile, Direction);
 
         m_currentNode = m_currentNode.m_next;
-        m_currentNode.m_data.AssignNewValues(m_previousNodeData.m_nextTile, m_previousNodeData.m_direction);
+        m_currentNode.UpdateBody(m_previousTile, m_previousDirection);
         UpdateAllSprites();
     }
 
     /// <summary>
     /// This function updates all the body parts of the snake so that it look like a real seamless snake.
     /// </summary>
-
     private void UpdateAllSprites()
     {
         Node m_currentNode = m_linkedList.m_root;
         Direction m_directionAhead;
-        ChangeBodySprite(m_currentNode, m_currentNode.m_data.m_direction);
+        ChangeBodySprite(m_currentNode, m_currentNode.m_direction);
         while (m_currentNode.m_next != null)
         {
-            m_directionAhead = m_currentNode.m_data.m_direction;
+            m_directionAhead = m_currentNode.m_direction;
             m_currentNode = m_currentNode.m_next;
             ChangeBodySprite(m_currentNode, m_directionAhead);
         }
     }
 
-    private void ChangeBodySprite(Node p_node, Direction p_aheadDirection)
+    private void ChangeBodySprite(Node p_node, Direction p_directionOfBodyInFront)
     {
         Sprite m_sprite = null;
         if (p_node == m_linkedList.m_root)
-            m_sprite = m_headSprites[(int)p_aheadDirection];
+            m_sprite = m_headSprites[(int)p_directionOfBodyInFront];
         else if (p_node.m_next != null)
         {
-            if (p_aheadDirection == p_node.m_data.m_direction)
-                m_sprite = m_bodySprites[(int)p_aheadDirection < 2 ? 0 : 1];
+            if (p_directionOfBodyInFront == p_node.m_direction)
+                m_sprite = m_bodySprites[(int)p_directionOfBodyInFront < 2 ? 0 : 1];
             else
             {
-                if (p_aheadDirection == Direction.Left)
-                    m_sprite = m_bodySprites[2 + (p_node.m_data.m_direction == Direction.Up ? 1 : 0)];
-                else if (p_aheadDirection == Direction.Right)
-                    m_sprite = m_bodySprites[2 + (p_node.m_data.m_direction == Direction.Up ? 3 : 2)];
-                else if (p_aheadDirection == Direction.Up)
-                    m_sprite = m_bodySprites[2 + (p_node.m_data.m_direction == Direction.Left ? 2 : 0)];
-                else if (p_aheadDirection == Direction.Down)
-                    m_sprite = m_bodySprites[2 + (p_node.m_data.m_direction == Direction.Left ? 3 : 1)];
+                if (p_directionOfBodyInFront == Direction.Left)
+                    m_sprite = m_bodySprites[2 + (p_node.m_direction == Direction.Up ? 1 : 0)];
+                else if (p_directionOfBodyInFront == Direction.Right)
+                    m_sprite = m_bodySprites[2 + (p_node.m_direction == Direction.Up ? 3 : 2)];
+                else if (p_directionOfBodyInFront == Direction.Up)
+                    m_sprite = m_bodySprites[2 + (p_node.m_direction == Direction.Left ? 2 : 0)];
+                else if (p_directionOfBodyInFront == Direction.Down)
+                    m_sprite = m_bodySprites[2 + (p_node.m_direction == Direction.Left ? 3 : 1)];
             }
         }
         else if (p_node.m_next == null)
-            m_sprite = m_tailSprites[(int)p_aheadDirection];
-        p_node.m_data.ChangeSprite(m_sprite);
+            m_sprite = m_tailSprites[(int)p_directionOfBodyInFront];
+        p_node.ChangeSprite(m_sprite);
     }
 
     public void ChangeDirection(Direction p_direction)
@@ -288,8 +283,7 @@ public class PlayerSnake : MonoBehaviour
         }
         return m_count + m_countFromRecursiveFunctions;
     }
-
-
+    
     private Direction[] GetPerpendicularDirections(Direction p_direction)
     {
         Direction[] m_perpendicularDirections = new Direction[2];
@@ -385,6 +379,12 @@ public class PlayerSnake : MonoBehaviour
     float CalculateManhattanDistance(Tile p_start, Tile p_end)
     {
         return (p_start.m_coordinates.x - p_end.m_coordinates.x) + (p_start.m_coordinates.y - p_end.m_coordinates.y);
+    }
+
+    public void OnGameOver()
+    {
+        m_linkedList.RemoveNodesFromTiles();
+        Destroy(gameObject);
     }
 
     void DebugPath()
